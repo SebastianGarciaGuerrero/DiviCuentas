@@ -1,49 +1,35 @@
+/* Importamos la fuente */
 @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
-
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 208, 212, 199, 1;
-  --background-start-rgb: 208, 212, 199, 1;
-  --background-end-rgb: 208, 212, 199, 1;
-}
+/* Estilos Base */
+@layer base {
+  body {
+    @apply bg-background text-secondary font-sans antialiased;
+    /* bg-background: Usa el color #F9FAFB definido en config 
+       text-secondary: Todo el texto base será #243642 (mejor lectura que negro puro)
+       font-sans: Aplica Titillium Web automáticamente
+    */
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 56, 116, 120;
-    --background-start-rgb: 56, 116, 120;
-    --background-end-rgb: 56, 116, 120;
+  /* Opcional: Estilo personalizado para la barra de scroll */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/50 rounded-full hover:bg-primary;
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
+/* Utilidades extra si las necesitas */
 html {
-  @apply scroll-smooth;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 1s ease-out;
+  scroll-behavior: smooth;
 }
