@@ -19,56 +19,39 @@ export const nombreMes = (id) => {
 export const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-// Estado inicial de ejemplo: se ve vivo al primer ingreso, todo editable.
-const estadoDemo = () => {
-  const p1 = uid();
-  const p2 = uid();
+// Estado inicial vacío: sin datos inventados. `configurado: false` hace que
+// la app muestre la pantalla de bienvenida y sea el usuario quien ingrese
+// el nombre del hogar y quiénes viven ahí.
+export const estadoInicial = () => {
   const actual = mesId();
   return {
     version: 1,
-    hogar: { nombre: "Nuestro hogar" },
-    participantes: [
-      { id: p1, nombre: "Yo", ingreso: 900000 },
-      { id: p2, nombre: "Mi polola", ingreso: 700000 },
-    ],
+    configurado: false,
+    hogar: { nombre: "" },
+    participantes: [],
     mesActivo: actual,
-    meses: {
-      [actual]: {
-        gastos: [
-          g("💡", "Luz", 32000, p1, "proporcional", true),
-          g("🚿", "Agua", 18000, p2, "proporcional", true),
-          g("🔥", "Gas", 25000, p1, "proporcional", true),
-          g("🌐", "Internet", 26990, p2, "iguales", true),
-          g("📺", "Netflix", 7490, p1, "iguales", true),
-          g("🍿", "Apple TV", 5990, p2, "iguales", true),
-          g("🐱", "Comida gatas", 42000, p1, "iguales", true),
-          g("🧻", "Arena", 12990, p2, "iguales", true),
-        ],
-      },
-    },
+    meses: { [actual]: { gastos: [] } },
   };
 };
-
-const g = (emoji, nombre, monto, pagadoPor, reparto, recurrente) => ({
-  id: uid(),
-  emoji,
-  nombre,
-  monto,
-  pagadoPor,
-  reparto,
-  recurrente,
-});
 
 export const cargar = () => {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const guardado = JSON.parse(raw);
+      // Migración: quien ya tenía datos de una versión anterior (sin la
+      // bandera) entra directo, no le mostramos la bienvenida de nuevo.
+      if (guardado.configurado === undefined) {
+        guardado.configurado = (guardado.participantes?.length ?? 0) > 0;
+      }
+      return guardado;
+    }
   } catch {
-    /* corrupto: reseteamos a demo */
+    /* dato corrupto: partimos de cero */
   }
-  const demo = estadoDemo();
-  guardar(demo);
-  return demo;
+  const inicial = estadoInicial();
+  guardar(inicial);
+  return inicial;
 };
 
 export const guardar = (estado) => {
@@ -80,7 +63,7 @@ export const guardar = (estado) => {
 };
 
 export const resetear = () => {
-  const demo = estadoDemo();
-  guardar(demo);
-  return demo;
+  const inicial = estadoInicial();
+  guardar(inicial);
+  return inicial;
 };

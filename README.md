@@ -8,6 +8,8 @@ En vivo: [divi-cuenta.vercel.app](https://divi-cuenta.vercel.app)
 
 ## Qué hace
 
+- **Bienvenida al primer uso**: pide el nombre del hogar y quiénes lo comparten.
+  La app parte vacía, sin datos de ejemplo.
 - **Gastos con nombre libre** — cada hogar tiene los suyos: luz, agua, gas,
   internet, Netflix, Apple TV, comida gatas, arena, lo que sea. Con emoji.
 - **Dos formas de dividir por gasto**: según ingreso (paga más quien gana más)
@@ -45,6 +47,7 @@ src/
 ├── store/
 │   └── useHogar.js      # estado global del hogar + acciones
 └── components/
+    ├── Welcome.jsx      # bienvenida / onboarding del primer uso
     ├── Dashboard.jsx    # pantalla principal
     ├── ExpenseModal.jsx # crear/editar gasto
     ├── ImportModal.jsx  # pegar desde Excel

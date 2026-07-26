@@ -47,7 +47,8 @@ const Dashboard = (h) => {
   );
 
   const posMes = meses.indexOf(mesActivo); // meses viene ordenado desc
-  const irAnterior = () => posMes < meses.length - 1 && cambiarMes(meses[posMes + 1]);
+  const hayMesAnterior = posMes < meses.length - 1;
+  const irAnterior = () => hayMesAnterior && cambiarMes(meses[posMes + 1]);
   const irSiguiente = () => {
     if (posMes > 0) cambiarMes(meses[posMes - 1]);
     else nuevoMesConRecurrentes();
@@ -186,32 +187,41 @@ const Dashboard = (h) => {
             >
               <IoSparkles size={16} /> Pegar del Excel
             </button>
-            <button
-              onClick={traerRecurrentes}
-              className="text-xs font-medium text-primary hover:text-secondary flex items-center gap-1"
-              title="Traer gastos recurrentes del mes anterior"
-            >
-              <IoRepeatOutline size={16} /> Traer recurrentes
-            </button>
+            {hayMesAnterior && (
+              <button
+                onClick={traerRecurrentes}
+                className="text-xs font-medium text-primary hover:text-secondary flex items-center gap-1"
+                title="Traer gastos recurrentes del mes anterior"
+              >
+                <IoRepeatOutline size={16} /> Traer recurrentes
+              </button>
+            )}
           </div>
         </div>
 
         {gastos.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
-            <p>Aún no hay gastos este mes.</p>
-            <div className="flex justify-center gap-4 mt-2">
-              <button
-                onClick={traerRecurrentes}
-                className="text-primary font-medium text-sm hover:underline"
-              >
-                Traer los del mes pasado
-              </button>
+          <div className="text-center py-10 px-6 bg-white rounded-xl border border-dashed border-gray-200">
+            <p className="text-gray-500">Aún no hay gastos este mes.</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {hayMesAnterior
+                ? "Trae los del mes pasado, pega tu planilla o agrégalos uno a uno."
+                : "Pega las cuentas desde tu planilla o agrégalas una a una."}
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 mt-4">
               <button
                 onClick={() => setModalImportar(true)}
-                className="text-primary font-medium text-sm hover:underline"
+                className="px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 active:scale-95 transition flex items-center gap-1.5"
               >
-                Pegar del Excel
+                <IoSparkles size={16} /> Pegar del Excel
               </button>
+              {hayMesAnterior && (
+                <button
+                  onClick={traerRecurrentes}
+                  className="px-4 py-2.5 border border-primary text-primary text-sm font-semibold rounded-lg hover:bg-accent transition flex items-center gap-1.5"
+                >
+                  <IoRepeatOutline size={16} /> Traer los del mes pasado
+                </button>
+              )}
             </div>
           </div>
         ) : (

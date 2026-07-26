@@ -85,6 +85,18 @@ export const useHogar = () => {
     []
   );
 
+  // Cierra la pantalla de bienvenida con los datos que ingresó el usuario
+  const completarOnboarding = useCallback(
+    (nombreHogar, lista) =>
+      setEstado((s) => ({
+        ...s,
+        configurado: true,
+        hogar: { ...s.hogar, nombre: nombreHogar },
+        participantes: lista,
+      })),
+    []
+  );
+
   // --- meses ---
   const cambiarMes = useCallback(
     (id) => setEstado((s) => ({ ...s, mesActivo: id })),
@@ -141,6 +153,7 @@ export const useHogar = () => {
 
   return {
     estado,
+    configurado: estado.configurado,
     hogar: estado.hogar,
     participantes,
     gastos,
@@ -153,6 +166,7 @@ export const useHogar = () => {
     eliminarGasto,
     setParticipantes,
     setHogar,
+    completarOnboarding,
     cambiarMes,
     nuevoMesConRecurrentes,
     traerRecurrentes,

@@ -1,9 +1,15 @@
 import { IoWalletOutline } from "react-icons/io5";
 import { useHogar } from "./store/useHogar";
 import Dashboard from "./components/Dashboard";
+import Welcome from "./components/Welcome";
 
 const App = () => {
   const hogar = useHogar();
+
+  // Primera vez: pedimos hogar y personas antes de mostrar el dashboard
+  if (!hogar.configurado) {
+    return <Welcome onListo={hogar.completarOnboarding} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
