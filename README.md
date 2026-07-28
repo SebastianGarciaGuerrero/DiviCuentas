@@ -4,7 +4,7 @@ App de gastos mensuales compartidos para parejas, roomies y familias. La idea:
 una vez al mes se sientan 5 minutos, cargan las cuentas, las pagan, y la app
 dice **cuánto gastaron, cuánto le toca a cada uno y quién le transfiere a quién**.
 
-En vivo: [divi-cuentas.vercel.app](https://divi-cuentas.vercel.app)
+En vivo: [divicuentas.vercel.app](https://divicuentas.vercel.app)
 
 ## Qué hace
 
