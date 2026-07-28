@@ -7,6 +7,7 @@ import {
 } from "react-icons/io5";
 import { parsearTexto } from "../lib/parseGastos";
 import { formatearCLP } from "../lib/format";
+import { useModal } from "../hooks/useModal";
 
 const EJEMPLO = `Luz\t32000
 Agua\t18500
@@ -19,6 +20,7 @@ const ImportModal = ({ participantes, onImportar, onClose }) => {
   const [texto, setTexto] = useState("");
   const [pagadoPor, setPagadoPor] = useState(participantes[0]?.id ?? "");
   const [descartados, setDescartados] = useState(() => new Set());
+  useModal(onClose);
 
   const detectados = useMemo(() => parsearTexto(texto), [texto]);
   const finales = detectados.filter((_, i) => !descartados.has(i));

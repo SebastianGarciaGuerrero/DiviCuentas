@@ -48,6 +48,34 @@ export const sugerirEmoji = (nombre) => {
   return regla ? regla[1] : "🛒";
 };
 
+// Categorías para el desglose del historial. El orden importa: gana la primera
+// que calce, por eso "gastos comunes" va antes que "gas".
+export const CATEGORIAS = {
+  basicos: { nombre: "Básicos", emoji: "💡", color: "#629584" },
+  hogar: { nombre: "Hogar", emoji: "🏠", color: "#243642" },
+  streaming: { nombre: "Streaming", emoji: "📺", color: "#8AAFA1" },
+  mercado: { nombre: "Mercado", emoji: "🛒", color: "#C08457" },
+  mascotas: { nombre: "Mascotas", emoji: "🐱", color: "#A67B9A" },
+  transporte: { nombre: "Transporte", emoji: "🚗", color: "#5B8FA8" },
+  salud: { nombre: "Salud", emoji: "💊", color: "#B5654F" },
+  otros: { nombre: "Otros", emoji: "📦", color: "#9CA3AF" },
+};
+
+const REGLAS_CATEGORIA = [
+  [/gastos? comun|conserj|edificio|arriendo|renta|dividendo|hipotec|aseo|limpieza|detergente|seguro/i, "hogar"],
+  [/luz|electric|enel|cge|agua|sanitar|\bgas\b|lipigas|abastible|metrogas|internet|wifi|fibra|vtr|movistar|entel|claro|celular|plan|telefon/i, "basicos"],
+  [/netflix|spotify|disney|hbo|max|prime|star|apple|itunes|icloud|music/i, "streaming"],
+  [/gata|gato|michi|felin|perr|dog|arena|litter|veterinar/i, "mascotas"],
+  [/super|feria|comida|almuerzo|mercado|jumbo|lider|tottus|unimarc/i, "mercado"],
+  [/auto|bencina|combustible|copec|shell|petrobras|estacion|metro|micro|uber/i, "transporte"],
+  [/farmacia|remedio|salud|isapre|fonasa|medic|dentista|gimnasio|gym/i, "salud"],
+];
+
+export const sugerirCategoria = (nombre) => {
+  const regla = REGLAS_CATEGORIA.find(([re]) => re.test(nombre));
+  return regla ? regla[1] : "otros";
+};
+
 // Cuentas fijas que se repiten todos los meses. Los gastos variables
 // (super, bencina, farmacia) NO se marcan recurrentes para que no se
 // arrastren al mes siguiente con un monto que ya no corresponde.
@@ -110,6 +138,8 @@ export const parsearTexto = (texto) =>
     .map((g) => ({
       ...g,
       emoji: sugerirEmoji(g.nombre),
+      categoria: sugerirCategoria(g.nombre),
       reparto: "proporcional",
       recurrente: esRecurrente(g.nombre),
+      pagado: false,
     }));

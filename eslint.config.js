@@ -39,4 +39,11 @@ export default [
       ],
     },
   },
+  {
+    // Los tests corren en Vitest: describe/it/expect son globales
+    files: ['**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
 ]

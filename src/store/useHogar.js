@@ -2,7 +2,7 @@
 // Un solo hook para toda la app; fácil de reemplazar por llamadas a Supabase
 // más adelante (misma forma de datos).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { cargar, guardar, mesId, uid, resetear } from "../lib/storage";
+import { cargar, guardar, mesId, uid, resetear, migrar } from "../lib/storage";
 import { calcularResumen } from "../lib/calc";
 
 export const useHogar = () => {
@@ -71,6 +71,25 @@ export const useHogar = () => {
 
   const eliminarGasto = useCallback(
     (id) => setGastos((list) => list.filter((g) => g.id !== id)),
+    [setGastos]
+  );
+
+  // Reinserta un gasto en su posición original (para deshacer un borrado)
+  const restaurarGasto = useCallback(
+    (gasto, posicion) =>
+      setGastos((list) => {
+        const copia = [...list];
+        copia.splice(Math.min(posicion, copia.length), 0, gasto);
+        return copia;
+      }),
+    [setGastos]
+  );
+
+  const alternarPagado = useCallback(
+    (id) =>
+      setGastos((list) =>
+        list.map((g) => (g.id === id ? { ...g, pagado: !g.pagado } : g))
+      ),
     [setGastos]
   );
 
@@ -149,7 +168,40 @@ export const useHogar = () => {
     });
   }, []);
 
+  // Borra un mes completo. No permite quedarse sin ninguno.
+  const borrarMes = useCallback((id) => {
+    setEstado((s) => {
+      const ids = Object.keys(s.meses ?? {});
+      if (ids.length <= 1 || !s.meses[id]) return s;
+      const meses = { ...s.meses };
+      delete meses[id];
+      const restantes = Object.keys(meses).sort();
+      return {
+        ...s,
+        meses,
+        mesActivo:
+          s.mesActivo === id ? restantes[restantes.length - 1] : s.mesActivo,
+      };
+    });
+  }, []);
+
   const resetTodo = useCallback(() => setEstado(resetear()), []);
+
+  // Reemplaza todo con lo que venga de un respaldo, pasándolo por la misma
+  // migración que los datos locales (puede venir de una versión anterior).
+  const restaurar = useCallback((estadoNuevo) => {
+    const migrado = migrar(estadoNuevo);
+    // Si el respaldo apunta a un mes que no existe, caemos en el más reciente
+    if (!migrado.meses?.[migrado.mesActivo]) {
+      const ids = Object.keys(migrado.meses ?? {}).sort();
+      migrado.mesActivo = ids[ids.length - 1] ?? mesId();
+      if (!migrado.meses) migrado.meses = {};
+      if (!migrado.meses[migrado.mesActivo]) {
+        migrado.meses[migrado.mesActivo] = { gastos: [] };
+      }
+    }
+    setEstado(migrado);
+  }, []);
 
   return {
     estado,
@@ -164,12 +216,16 @@ export const useHogar = () => {
     agregarVarios,
     editarGasto,
     eliminarGasto,
+    restaurarGasto,
+    alternarPagado,
     setParticipantes,
     setHogar,
     completarOnboarding,
     cambiarMes,
     nuevoMesConRecurrentes,
     traerRecurrentes,
+    borrarMes,
     resetTodo,
+    restaurar,
   };
 };

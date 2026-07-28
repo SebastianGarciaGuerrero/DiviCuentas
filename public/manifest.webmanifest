@@ -1,0 +1,21 @@
+{
+  "name": "DiviCuentas",
+  "short_name": "DiviCuentas",
+  "description": "Ordena los gastos del mes con tu pareja o roomies: quién pagó qué y quién le debe a quién.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F9FAFB",
+  "theme_color": "#243642",
+  "lang": "es-CL",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/DiviCuentas_logo.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

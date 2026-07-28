@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { IoClose, IoTrashOutline } from "react-icons/io5";
 import MoneyInput from "./MoneyInput";
+import { CATEGORIAS, sugerirEmoji, sugerirCategoria } from "../lib/parseGastos";
+import { useModal } from "../hooks/useModal";
 
 const EMOJIS = [
   "💡", "🚿", "🔥", "🌐", "📺", "🍿", "🐱", "🐶", "🧻", "🛒",
@@ -14,18 +16,34 @@ const vacio = () => ({
   pagadoPor: "",
   reparto: "proporcional",
   recurrente: true,
+  categoria: "otros",
+  pagado: false,
 });
 
 // Modal para crear/editar un gasto. Nombre libre (cada hogar tiene los suyos).
 const ExpenseModal = ({ gasto, participantes, onGuardar, onEliminar, onClose }) => {
   const [form, setForm] = useState(vacio);
+  // Si el usuario elige emoji o categoría a mano, dejamos de sugerirlos
+  const [tocado, setTocado] = useState({ emoji: false, categoria: false });
+  useModal(onClose);
 
   useEffect(() => {
     if (gasto) setForm(gasto);
     else setForm({ ...vacio(), pagadoPor: participantes[0]?.id ?? "" });
+    setTocado({ emoji: false, categoria: false });
   }, [gasto, participantes]);
 
   const set = (campo, valor) => setForm((f) => ({ ...f, [campo]: valor }));
+
+  // Al escribir el nombre sugerimos emoji y categoría: "Netflix" ya viene
+  // con 📺 y streaming sin que el usuario elija nada.
+  const setNombre = (valor) =>
+    setForm((f) => ({
+      ...f,
+      nombre: valor,
+      emoji: tocado.emoji ? f.emoji : sugerirEmoji(valor),
+      categoria: tocado.categoria ? f.categoria : sugerirCategoria(valor),
+    }));
 
   const submit = (e) => {
     e.preventDefault();
@@ -58,7 +76,7 @@ const ExpenseModal = ({ gasto, participantes, onGuardar, onEliminar, onClose }) 
                 type="text"
                 placeholder="Luz, Comida gatas, Netflix…"
                 value={form.nombre}
-                onChange={(e) => set("nombre", e.target.value)}
+                onChange={(e) => setNombre(e.target.value)}
                 className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-secondary"
               />
             </div>
@@ -67,7 +85,10 @@ const ExpenseModal = ({ gasto, participantes, onGuardar, onEliminar, onClose }) 
                 <button
                   key={e}
                   type="button"
-                  onClick={() => set("emoji", e)}
+                  onClick={() => {
+                    setTocado((t) => ({ ...t, emoji: true }));
+                    set("emoji", e);
+                  }}
                   className={`w-9 h-9 rounded-lg text-lg transition ${
                     form.emoji === e ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-gray-100"
                   }`}
@@ -83,6 +104,30 @@ const ExpenseModal = ({ gasto, participantes, onGuardar, onEliminar, onClose }) 
             <label className="text-sm font-medium text-gray-600">Monto</label>
             <div className="mt-1">
               <MoneyInput value={form.monto} onChange={(v) => set("monto", v)} className="text-lg text-right" />
+            </div>
+          </div>
+
+          {/* Categoría: alimenta el desglose del historial */}
+          <div>
+            <label className="text-sm font-medium text-gray-600">Categoría</label>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {Object.entries(CATEGORIAS).map(([clave, cat]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  onClick={() => {
+                    setTocado((t) => ({ ...t, categoria: true }));
+                    set("categoria", clave);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                    form.categoria === clave
+                      ? "bg-secondary text-white border-secondary"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:border-secondary"
+                  }`}
+                >
+                  {cat.emoji} {cat.nombre}
+                </button>
+              ))}
             </div>
           </div>
 

@@ -2,11 +2,13 @@ import { useState } from "react";
 import { IoClose, IoPersonAddOutline, IoTrashOutline } from "react-icons/io5";
 import MoneyInput from "./MoneyInput";
 import { uid } from "../lib/storage";
+import { useModal } from "../hooks/useModal";
 
 // Configuración del hogar: nombre del hogar, integrantes y su ingreso mensual.
 const PeopleModal = ({ hogar, participantes, onGuardar, onClose }) => {
   const [nombreHogar, setNombreHogar] = useState(hogar.nombre);
   const [lista, setLista] = useState(participantes.map((p) => ({ ...p })));
+  useModal(onClose);
 
   const set = (i, campo, valor) =>
     setLista((l) => l.map((p, idx) => (idx === i ? { ...p, [campo]: valor } : p)));

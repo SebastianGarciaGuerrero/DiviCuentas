@@ -2,6 +2,8 @@
 // enchufemos un backend (Supabase). La forma del estado está pensada para
 // migrar directo a tablas: participantes, meses y gastos.
 
+import { sugerirCategoria } from "./parseGastos";
+
 const KEY = "divicuentas:v1";
 
 export const mesId = (fecha = new Date()) =>
@@ -34,17 +36,41 @@ export const estadoInicial = () => {
   };
 };
 
+// Completa los datos guardados por versiones anteriores. Se ejecuta en cada
+// carga, así que debe ser idempotente y no perder nada de lo que ya existe.
+export const migrar = (estado) => {
+  const s = { ...estado };
+
+  // Antes no existía la bandera: quien ya tenía personas no debe ver la
+  // pantalla de bienvenida otra vez.
+  if (s.configurado === undefined) {
+    s.configurado = (s.participantes?.length ?? 0) > 0;
+  }
+
+  // Los gastos viejos no tienen categoría ni estado de pago.
+  s.meses = Object.fromEntries(
+    Object.entries(s.meses ?? {}).map(([id, mes]) => [
+      id,
+      {
+        ...mes,
+        gastos: (mes.gastos ?? []).map((g) => ({
+          ...g,
+          categoria: g.categoria ?? sugerirCategoria(g.nombre ?? ""),
+          pagado: g.pagado ?? false,
+        })),
+      },
+    ])
+  );
+
+  return s;
+};
+
 export const cargar = () => {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const guardado = JSON.parse(raw);
-      // Migración: quien ya tenía datos de una versión anterior (sin la
-      // bandera) entra directo, no le mostramos la bienvenida de nuevo.
-      if (guardado.configurado === undefined) {
-        guardado.configurado = (guardado.participantes?.length ?? 0) > 0;
-      }
-      return guardado;
+      return migrar(guardado);
     }
   } catch {
     /* dato corrupto: partimos de cero */

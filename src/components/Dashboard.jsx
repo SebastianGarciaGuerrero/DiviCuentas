@@ -9,6 +9,9 @@ import {
   IoRepeatOutline,
   IoCheckmarkCircle,
   IoSparkles,
+  IoEllipseOutline,
+  IoEllipsisHorizontal,
+  IoShareSocialOutline,
 } from "react-icons/io5";
 import { formatearCLP } from "../lib/format";
 import { nombreMes } from "../lib/storage";
@@ -16,6 +19,8 @@ import ExpenseModal from "./ExpenseModal";
 import PeopleModal from "./PeopleModal";
 import HistoryModal from "./HistoryModal";
 import ImportModal from "./ImportModal";
+import SettingsModal from "./SettingsModal";
+import Toast from "./Toast";
 
 const Dashboard = (h) => {
   const {
@@ -29,11 +34,15 @@ const Dashboard = (h) => {
     agregarVarios,
     editarGasto,
     eliminarGasto,
+    restaurarGasto,
+    alternarPagado,
     setParticipantes,
     setHogar,
     cambiarMes,
     nuevoMesConRecurrentes,
     traerRecurrentes,
+    borrarMes,
+    restaurar,
     estado,
   } = h;
 
@@ -41,6 +50,23 @@ const Dashboard = (h) => {
   const [modalPersonas, setModalPersonas] = useState(false);
   const [modalHistorial, setModalHistorial] = useState(false);
   const [modalImportar, setModalImportar] = useState(false);
+  const [modalAjustes, setModalAjustes] = useState(false);
+  const [aviso, setAviso] = useState(null); // { mensaje, deshacer }
+
+  // Borrar avisa y deja deshacer: un toque perdido no cuesta el dato.
+  const borrarGasto = (id) => {
+    const posicion = gastos.findIndex((g) => g.id === id);
+    const gasto = gastos[posicion];
+    eliminarGasto(id);
+    setModalGasto(null);
+    setAviso({
+      mensaje: `"${gasto.nombre}" eliminado`,
+      deshacer: () => {
+        restaurarGasto(gasto, posicion);
+        setAviso(null);
+      },
+    });
+  };
 
   const nombrePorId = Object.fromEntries(
     participantes.map((p) => [p.id, p.nombre])
@@ -97,9 +123,16 @@ const Dashboard = (h) => {
           <button
             onClick={() => setModalPersonas(true)}
             className="p-2.5 rounded-lg bg-white border border-gray-100 text-secondary hover:text-primary shadow-sm"
-            title="Personas"
+            title="Personas y sueldos"
           >
             <IoPeopleOutline size={20} />
+          </button>
+          <button
+            onClick={() => setModalAjustes(true)}
+            className="p-2.5 rounded-lg bg-white border border-gray-100 text-secondary hover:text-primary shadow-sm"
+            title="Ajustes, respaldo y compartir"
+          >
+            <IoEllipsisHorizontal size={20} />
           </button>
         </div>
       </div>
@@ -114,18 +147,48 @@ const Dashboard = (h) => {
         <p className="text-gray-400 text-xs mt-1 relative z-10">
           {gastos.length} gastos · {participantes.length} personas
         </p>
+
+        {/* Avance del mes: qué falta por pagar */}
+        {gastos.length > 0 && (
+          <div className="relative z-10 mt-4 pt-4 border-t border-white/10">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="text-accent">
+                {resumen.pagados} de {gastos.length} pagadas
+              </span>
+              <span className={resumen.todoPagado ? "text-primary" : "text-white/70"}>
+                {resumen.todoPagado
+                  ? "¡Mes cerrado!"
+                  : `faltan ${formatearCLP(resumen.montoPendiente)}`}
+              </span>
+            </div>
+            <div className="h-1.5 bg-white/15 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${(resumen.pagados / gastos.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* TARJETAS POR PERSONA */}
       <div className="grid grid-cols-2 gap-3 mt-4">
         {resumen.porPersona.map((p) => (
-          <div key={p.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+          <button
+            key={p.id}
+            onClick={() => setModalPersonas(true)}
+            className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-left hover:border-primary/40 transition"
+            title="Tocar para editar personas y sueldos"
+          >
             <div className="flex items-center justify-between">
               <p className="font-bold text-secondary truncate">{p.nombre}</p>
-              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">
                 {p.porcentaje}%
               </span>
             </div>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              {p.ingreso > 0 ? `Sueldo ${formatearCLP(p.ingreso)}` : "Sin sueldo definido"}
+            </p>
             <p className="text-xs text-gray-400 mt-2">Le toca</p>
             <p className="text-lg font-bold text-secondary">{formatearCLP(p.leToca)}</p>
             <div className="flex justify-between text-xs mt-2 pt-2 border-t border-gray-50">
@@ -142,15 +205,26 @@ const Dashboard = (h) => {
                 {p.balance > 0 ? "le deben" : p.balance < 0 ? "debe" : "al día"}
               </span>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       {/* LIQUIDACIÓN */}
       <div className="mt-4 bg-primary/10 rounded-2xl p-5 border border-primary/20">
-        <div className="flex items-center gap-2 mb-3">
-          <IoArrowForward className="text-primary" />
-          <h2 className="font-bold text-secondary">Para quedar a mano</h2>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <IoArrowForward className="text-primary" />
+            <h2 className="font-bold text-secondary">Para quedar a mano</h2>
+          </div>
+          {gastos.length > 0 && (
+            <button
+              onClick={() => setModalAjustes(true)}
+              className="text-xs font-medium text-primary hover:text-secondary flex items-center gap-1"
+              title="Compartir el resumen del mes"
+            >
+              <IoShareSocialOutline size={16} /> Compartir
+            </button>
+          )}
         </div>
         {resumen.liquidacion.length === 0 ? (
           <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -227,31 +301,70 @@ const Dashboard = (h) => {
         ) : (
           <div className="space-y-2">
             {gastos.map((g) => (
-              <button
+              <div
                 key={g.id}
-                onClick={() => setModalGasto({ gasto: g })}
-                className="w-full flex items-center gap-3 bg-white rounded-xl p-3 border border-gray-100 hover:border-primary/40 shadow-sm transition text-left"
+                className={`flex items-center gap-2 rounded-xl border shadow-sm transition ${
+                  g.pagado
+                    ? "bg-primary/5 border-primary/20"
+                    : "bg-white border-gray-100 hover:border-primary/40"
+                }`}
               >
-                <div className="w-11 h-11 rounded-lg bg-accent flex items-center justify-center text-xl shrink-0">
-                  {g.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-secondary truncate">
-                    {g.nombre}
-                    {g.recurrente && (
-                      <IoRepeatOutline
-                        className="inline ml-1.5 text-gray-300 align-middle"
-                        size={14}
-                      />
-                    )}
+                {/* Marcar como pagada: acción aparte para no abrir la edición */}
+                <button
+                  onClick={() => alternarPagado(g.id)}
+                  className="pl-3 py-3 shrink-0"
+                  aria-label={
+                    g.pagado ? `Marcar ${g.nombre} como pendiente` : `Marcar ${g.nombre} como pagada`
+                  }
+                  aria-pressed={g.pagado}
+                  title={g.pagado ? "Marcar como pendiente" : "Marcar como pagada"}
+                >
+                  {g.pagado ? (
+                    <IoCheckmarkCircle className="text-primary" size={26} />
+                  ) : (
+                    <IoEllipseOutline className="text-gray-300 hover:text-primary" size={26} />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setModalGasto({ gasto: g })}
+                  className="flex-1 flex items-center gap-3 py-3 pr-3 text-left min-w-0"
+                >
+                  <div
+                    className={`w-11 h-11 rounded-lg flex items-center justify-center text-xl shrink-0 ${
+                      g.pagado ? "bg-primary/10" : "bg-accent"
+                    }`}
+                  >
+                    {g.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`font-semibold truncate ${
+                        g.pagado ? "text-gray-400 line-through" : "text-secondary"
+                      }`}
+                    >
+                      {g.nombre}
+                      {g.recurrente && (
+                        <IoRepeatOutline
+                          className="inline ml-1.5 text-gray-300 align-middle"
+                          size={14}
+                        />
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      Pagó {nombrePorId[g.pagadoPor] ?? "—"} ·{" "}
+                      {g.reparto === "iguales" ? "mitad y mitad" : "según ingreso"}
+                    </p>
+                  </div>
+                  <p
+                    className={`font-bold shrink-0 ${
+                      g.pagado ? "text-gray-400" : "text-secondary"
+                    }`}
+                  >
+                    {formatearCLP(g.monto)}
                   </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    Pagó {nombrePorId[g.pagadoPor] ?? "—"} ·{" "}
-                    {g.reparto === "iguales" ? "mitad y mitad" : "según ingreso"}
-                  </p>
-                </div>
-                <p className="font-bold text-secondary shrink-0">{formatearCLP(g.monto)}</p>
-              </button>
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -272,10 +385,7 @@ const Dashboard = (h) => {
           gasto={modalGasto.gasto}
           participantes={participantes}
           onGuardar={guardarGasto}
-          onEliminar={(id) => {
-            eliminarGasto(id);
-            setModalGasto(null);
-          }}
+          onEliminar={borrarGasto}
           onClose={() => setModalGasto(null)}
         />
       )}
@@ -301,10 +411,31 @@ const Dashboard = (h) => {
           onClose={() => setModalImportar(false)}
         />
       )}
+      {aviso && (
+        <Toast
+          mensaje={aviso.mensaje}
+          onDeshacer={aviso.deshacer}
+          onCerrar={() => setAviso(null)}
+        />
+      )}
+
+      {modalAjustes && (
+        <SettingsModal
+          estado={estado}
+          mesActivo={mesActivo}
+          hogar={hogar}
+          gastos={gastos}
+          participantes={participantes}
+          resumen={resumen}
+          onRestaurar={restaurar}
+          onClose={() => setModalAjustes(false)}
+        />
+      )}
       {modalHistorial && (
         <HistoryModal
           estado={estado}
           mesActivo={mesActivo}
+          onBorrarMes={borrarMes}
           onSeleccionar={(id) => {
             cambiarMes(id);
             setModalHistorial(false);

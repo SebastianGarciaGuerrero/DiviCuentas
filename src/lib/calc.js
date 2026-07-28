@@ -77,10 +77,21 @@ export const calcularResumen = (participantes, gastos) => {
     p.porcentaje = total > 0 ? Math.round((p.leToca / total) * 100) : 0;
   });
 
+  // Avance del mes: cuántas cuentas quedan por pagar y cuánta plata falta
+  const pendientes = gastos.filter((g) => !g.pagado);
+  const montoPendiente = pendientes.reduce(
+    (acc, g) => acc + (Number(g.monto) || 0),
+    0
+  );
+
   return {
     total,
     porPersona,
     liquidacion: liquidar(porPersona),
+    pendientes: pendientes.length,
+    pagados: gastos.length - pendientes.length,
+    montoPendiente,
+    todoPagado: gastos.length > 0 && pendientes.length === 0,
   };
 };
 
